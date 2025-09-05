@@ -1,16 +1,13 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { createClient } from "@/lib/supabase/client"
-import Link from "next/link"
-import type { User } from "@supabase/supabase-js"
 
 interface ChatMessage {
   role: "user" | "assistant"
@@ -23,35 +20,11 @@ export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
   const [generatedCode, setGeneratedCode] = useState({
     html: "",
     css: "",
     js: "",
   })
-
-  useEffect(() => {
-    const supabase = createClient()
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,7 +64,6 @@ export default function HomePage() {
 
       setMessages((prev) => [...prev, assistantMessage])
 
-      // Extract code from response if present
       extractCodeFromResponse(data.content)
     } catch (error) {
       console.error("Chat error:", error)
@@ -124,41 +96,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-2xl font-bold">WEB.BUILDING.GENIOUS</h1>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="text-sm text-muted-foreground">Welcome, {user.email}</span>
-                <Button variant="outline" size="sm" onClick={handleSignOut}>
-                  Sign Out
-                </Button>
-              </>
-            ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/auth/login">Login</Link>
-                </Button>
-                <Button size="sm" asChild>
-                  <Link href="/auth/sign-up">Sign Up</Link>
-                </Button>
-              </div>
-            )}
-          </div>
+        <div className="container mx-auto px-4 py-3">
+          <h1 className="text-2xl font-bold text-center">WEB.BUILDING.GENIOUS</h1>
         </div>
       </header>
 
       <div className="container mx-auto p-4">
         <div className="mb-6 text-center">
           <p className="text-muted-foreground">AI-Powered Web Application Generator</p>
-          {!user && (
-            <p className="text-sm text-muted-foreground mt-2">
-              <Link href="/auth/login" className="underline">
-                Sign in
-              </Link>{" "}
-              to save your projects and chat history
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground mt-2">
+            Describe what you want to build and get instant HTML, CSS, and JavaScript code
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
